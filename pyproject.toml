@@ -1,0 +1,22 @@
+# Clavier-Propre — Packaging configuration.
+# Permet l'installation en mode editable et la déclaration des dépendances
+# Windows-spécifiques via PEP 508.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clavier-propre"
+version = "1.0.0"
+description = "Désactive les suggestions du clavier physique et la correction automatique de Microsoft Office / LibreOffice pour les phases d'évaluation."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PySide6>=6.6",
+]
+
+[project.scripts]
+clavier-propre = "clavier_propre.__main__:main"
+
+[tool.setuptools]
+packages = ["clavier_propre"]
