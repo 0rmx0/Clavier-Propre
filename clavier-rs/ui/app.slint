@@ -1,0 +1,67 @@
+import { Button, CheckBox } from "std-widgets.slint";
+
+export global StatusColors {
+    out property <brush> active-color: #c0392b;
+    out property <brush> inactive-color: #27ae60;
+}
+
+export component App inherits Window {
+    title: "Clavier-Propre";
+    background: root.protection-active ? StatusColors.active-color : StatusColors.inactive-color;
+    preferred-width: 260px;
+    preferred-height: 180px;
+
+    in-out property <bool> protection-active: true;
+    in-out property <string> status-text: "Protection ACTIVE";
+    in-out property <string> detail-text: "Suggestions clavier désactivées";
+    in-out property <bool> manage-word: true;
+    in-out property <bool> manage-libreoffice: true;
+
+    callback toggle-protection();
+    callback word-toggled(bool);
+    callback libreoffice-toggled(bool);
+
+    VerticalLayout {
+        alignment: center;
+        spacing: 8px;
+        padding: 14px;
+
+        Text {
+            text: root.status-text;
+            font-weight: 800;
+            font-size: 14px;
+            color: white;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.detail-text;
+            font-size: 11px;
+            color: white;
+            horizontal-alignment: center;
+            wrap: word-wrap;
+        }
+
+        Button {
+            text: root.protection-active ? "Désactiver la protection" : "Activer la protection";
+            clicked => { root.toggle-protection(); }
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: center;
+
+            CheckBox {
+                text: "Word";
+                checked: root.manage-word;
+                toggled => { root.word-toggled(self.checked); }
+            }
+
+            CheckBox {
+                text: "LibreOffice";
+                checked: root.manage-libreoffice;
+                toggled => { root.libreoffice-toggled(self.checked); }
+            }
+        }
+    }
+}
