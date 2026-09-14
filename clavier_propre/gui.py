@@ -296,8 +296,10 @@ def run_gui() -> int:
     lo_check.stateChanged.connect(on_lo)
     password_btn.clicked.connect(on_password_btn)
 
-    # Application de l'état initial au démarrage.
-    initial = controller.apply(active=controller.config.protection_active)
+    # L'outil démarre TOUJOURS en non protégé (l'instituteur active la
+    # protection explicitement quand il le souhaite). On force l'état à faux,
+    # quel que soit l'état persisté dans config.json.
+    initial = controller.apply(active=False)
     refresh(initial)
 
     # Surveillance périodique : si les suggestions ont été réactivées par un
