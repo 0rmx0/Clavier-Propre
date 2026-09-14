@@ -134,20 +134,28 @@ def run_gui() -> int:
     layout.addWidget(password_btn)
 
     def refresh(state):
-        if state.active:
-            status_label.setText("Protection ACTIVE")
-            status_label.setStyleSheet("color: #ffffff;")
-            detail_label.setText("Suggestions clavier désactivées")
-            window.setStyleSheet("background-color: #c0392b;")
-            toggle_btn.setText("Désactiver la protection")
-            toggle_btn.setChecked(False)
-        else:
-            status_label.setText("Protection inactive")
-            status_label.setStyleSheet("color: #ffffff;")
-            detail_label.setText("Suggestions clavier autorisées")
-            window.setStyleSheet("background-color: #27ae60;")
-            toggle_btn.setText("Activer la protection")
-            toggle_btn.setChecked(True)
+        # ``refresh`` est un rafraîchissement programmatique : on bloque les
+        # signaux du bouton pour ne pas déclencher ``on_toggle`` (qui exigerait
+        # le mot de passe). Le mot de passe ne doit être demandé que sur une
+        # action utilisateur.
+        toggle_btn.blockSignals(True)
+        try:
+            if state.active:
+                status_label.setText("Protection ACTIVE")
+                status_label.setStyleSheet("color: #ffffff;")
+                detail_label.setText("Suggestions clavier désactivées")
+                window.setStyleSheet("background-color: #c0392b;")
+                toggle_btn.setText("Désactiver la protection")
+                toggle_btn.setChecked(False)
+            else:
+                status_label.setText("Protection inactive")
+                status_label.setStyleSheet("color: #ffffff;")
+                detail_label.setText("Suggestions clavier autorisées")
+                window.setStyleSheet("background-color: #27ae60;")
+                toggle_btn.setText("Activer la protection")
+                toggle_btn.setChecked(True)
+        finally:
+            toggle_btn.blockSignals(False)
 
     def _warn(message: str) -> None:
         QMessageBox.warning(window, "Clavier-Propre", message)
@@ -191,7 +199,11 @@ def run_gui() -> int:
         if checked and not ask_teacher_password(
             "Saisissez le mot de passe professeur pour désactiver la protection"
         ):
+            # Annulation : on remet le bouton à l'état antérieur SANS déclencher
+            # le signal (sinon récursion / nouvelle demande de mot de passe).
+            toggle_btn.blockSignals(True)
             toggle_btn.setChecked(False)
+            toggle_btn.blockSignals(False)
             return
         new_state = controller.apply(active=not checked)
         refresh(new_state)
