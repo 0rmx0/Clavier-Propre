@@ -1,25 +1,42 @@
-import { Button, CheckBox } from "std-widgets.slint";
+import { Button, CheckBox, LineEdit } from "std-widgets.slint";
 
 export global StatusColors {
     out property <brush> active-color: #c0392b;
     out property <brush> inactive-color: #27ae60;
+    out property <color> btn-bg: #1f1419;
+    out property <color> btn-hover: #2d1f28;
 }
 
 export component App inherits Window {
     title: "Clavier-Propre";
     background: root.protection-active ? StatusColors.active-color : StatusColors.inactive-color;
-    preferred-width: 260px;
-    preferred-height: 180px;
+    preferred-width: 280px;
+    preferred-height: 320px;
 
-    in-out property <bool> protection-active: true;
-    in-out property <string> status-text: "Protection ACTIVE";
-    in-out property <string> detail-text: "Suggestions clavier désactivées";
+    in-out property <bool> protection-active: false;
+    in-out property <string> status-text: "Protection inactive";
+    in-out property <string> detail-text: "Suggestions clavier autorisées";
     in-out property <bool> manage-word: true;
     in-out property <bool> manage-libreoffice: true;
+    in-out property <bool> has-teacher-password: false;
+    in-out property <string> password-prompt: "";
+    in-out property <bool> show-password-dialog: false;
+    in-out property <string> password-input: "";
+    in-out property <string> password-cur-input: "";
+    in-out property <string> password-new-input: "";
+    in-out property <string> password-confirm-input: "";
+    in-out property <bool> show-password-setup-dialog: false;
+    in-out property <string> password-message: "";
 
     callback toggle-protection();
     callback word-toggled(bool);
     callback libreoffice-toggled(bool);
+    callback reduce-requested();
+    callback password-dialog-ok();
+    callback password-dialog-cancel();
+    callback password-setup-ok();
+    callback password-setup-cancel();
+    callback open-password-setup();
 
     VerticalLayout {
         alignment: center;
@@ -61,6 +78,125 @@ export component App inherits Window {
                 text: "LibreOffice";
                 checked: root.manage-libreoffice;
                 toggled => { root.libreoffice-toggled(self.checked); }
+            }
+        }
+
+        Button {
+            text: "Mot de passe professeur";
+            clicked => { root.open-password-setup(); }
+        }
+
+        Button {
+            text: "Réduire";
+            clicked => { root.reduce-requested(); }
+        }
+    }
+
+    // Dialogue de saisie du mot de passe (superposé).
+    if root.show-password-dialog : Rectangle {
+        background: #2b1d24;
+        border-radius: 8px;
+        x: 10px; y: 10px;
+        width: root.width - 20px;
+        height: root.height - 20px;
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 10px;
+            padding: 16px;
+
+            Text {
+                text: root.password-prompt;
+                color: white;
+                font-size: 11px;
+                wrap: word-wrap;
+                horizontal-alignment: center;
+            }
+
+            LineEdit {
+                placeholder-text: "Mot de passe";
+                text: root.password-input;
+                edited => { root.password-input = self.text; }
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: center;
+                Button {
+                    text: "OK";
+                    clicked => { root.password-dialog-ok(); }
+                }
+                Button {
+                    text: "Annuler";
+                    clicked => { root.password-dialog-cancel(); }
+                }
+            }
+        }
+    }
+
+    // Dialogue de réglage du mot de passe.
+    if root.show-password-setup-dialog : Rectangle {
+        background: #2b1d24;
+        border-radius: 8px;
+        x: 10px; y: 10px;
+        width: root.width - 20px;
+        height: root.height - 20px;
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 8px;
+            padding: 16px;
+
+            Text {
+                text: "Mot de passe professeur";
+                color: white;
+                font-weight: 700;
+                font-size: 12px;
+                horizontal-alignment: center;
+            }
+            Text {
+                text: "Laisser vide pour supprimer.";
+                color: #cccccc;
+                font-size: 9px;
+                horizontal-alignment: center;
+            }
+
+            if root.has-teacher-password : LineEdit {
+                placeholder-text: "Mot de passe actuel";
+                text: root.password-cur-input;
+                edited => { root.password-cur-input = self.text; }
+            }
+
+            LineEdit {
+                placeholder-text: "Nouveau mot de passe";
+                text: root.password-new-input;
+                edited => { root.password-new-input = self.text; }
+            }
+
+            LineEdit {
+                placeholder-text: "Confirmer";
+                text: root.password-confirm-input;
+                edited => { root.password-confirm-input = self.text; }
+            }
+
+            if !root.password-message.is-empty : Text {
+                text: root.password-message;
+                color: #ff6b6b;
+                font-size: 10px;
+                horizontal-alignment: center;
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: center;
+                Button {
+                    text: "OK";
+                    clicked => { root.password-setup-ok(); }
+                }
+                Button {
+                    text: "Annuler";
+                    clicked => { root.password-setup-cancel(); }
+                }
             }
         }
     }

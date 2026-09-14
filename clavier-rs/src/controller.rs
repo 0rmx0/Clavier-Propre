@@ -66,6 +66,20 @@ impl ProtectionController {
         self.config.lock().unwrap().protection_active
     }
 
+    pub fn config_has_teacher_password(&self) -> bool {
+        self.config.lock().unwrap().has_teacher_password()
+    }
+
+    pub fn check_teacher_password(&self, password: &str) -> bool {
+        self.config.lock().unwrap().check_teacher_password(password)
+    }
+
+    pub fn set_teacher_password(&self, password: &str) {
+        let mut cfg = self.config.lock().unwrap();
+        cfg.set_teacher_password(password);
+        cfg.save();
+    }
+
     /// Watchdog : si la protection doit être active mais que les suggestions
     /// ont été réactivées, on ré-applique.
     pub fn watchdog(&self) {
