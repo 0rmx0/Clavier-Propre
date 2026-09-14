@@ -60,8 +60,27 @@ def run_gui() -> int:
     detail_label.setWordWrap(True)
     layout.addWidget(detail_label)
 
+    # Palette des boutons : fond nettement plus sombre que le fond de la fenêtre
+    # pour qu'ils restent bien lisibles, quel que soit l'état (rouge / vert).
+    BTN_BG = "#1f1419"
+    BTN_HOVER = "#2d1f28"
     toggle_btn = QPushButton("Désactiver la protection")
     toggle_btn.setCheckable(True)
+    toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    toggle_btn.setStyleSheet(
+        f"""
+        QPushButton {{
+            background-color: {BTN_BG};
+            color: #ffffff;
+            border: 1px solid #000000;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-weight: 600;
+        }}
+        QPushButton:hover {{ background-color: {BTN_HOVER}; }}
+        QPushButton:pressed {{ background-color: #120a10; }}
+        """
+    )
     layout.addWidget(toggle_btn)
 
     options_row = QHBoxLayout()
@@ -69,6 +88,25 @@ def run_gui() -> int:
     lo_check = QCheckBox("LibreOffice")
     word_check.setChecked(controller.config.manage_word)
     lo_check.setChecked(controller.config.manage_libreoffice)
+    checkbox_qss = (
+        f"""
+        QCheckBox {{
+            color: #ffffff;
+            background-color: {BTN_BG};
+            border-radius: 4px;
+            padding: 4px 6px;
+        }}
+        QCheckBox::indicator {{
+            width: 14px; height: 14px;
+            border: 1px solid #ffffff;
+            border-radius: 3px;
+            background-color: #0d0709;
+        }}
+        QCheckBox::indicator:checked {{ background-color: #ffffff; }}
+        """
+    )
+    word_check.setStyleSheet(checkbox_qss)
+    lo_check.setStyleSheet(checkbox_qss)
     options_row.addWidget(word_check)
     options_row.addWidget(lo_check)
     layout.addLayout(options_row)
