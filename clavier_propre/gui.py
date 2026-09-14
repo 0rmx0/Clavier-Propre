@@ -141,6 +141,28 @@ def run_gui() -> int:
     )
     layout.addWidget(password_btn)
 
+    # Bouton de réduction en pastille.
+    reduce_btn = QPushButton("Réduire")
+    reduce_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    reduce_btn.setStyleSheet(
+        f"""
+        QPushButton {{
+            background-color: {BTN_BG};
+            color: #ffffff;
+            border: 1px solid #000000;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 10px;
+        }}
+        QPushButton:hover {{ background-color: {BTN_HOVER}; }}
+        """
+    )
+    layout.addWidget(reduce_btn)
+
+    # Pastille indicatrice (mode réduit).
+    from clavier_propre.pastille import PastilleButton
+    pastille = PastilleButton()
+
     def refresh(state):
         # ``refresh`` est un rafraîchissement programmatique : on bloque les
         # signaux du bouton pour ne pas déclencher ``on_toggle`` (qui exigerait
@@ -164,6 +186,7 @@ def run_gui() -> int:
                 toggle_btn.setChecked(True)
         finally:
             toggle_btn.blockSignals(False)
+            pastille.set_active(state.active)
 
     def _warn(message: str) -> None:
         QMessageBox.warning(window, "Clavier-Propre", message)
@@ -299,10 +322,36 @@ def run_gui() -> int:
         controller.config.save()
         _info("Mot de passe professeur mis à jour." if new_pw else "Mot de passe professeur supprimé.")
 
+    def pastille_toggle():
+        # Bascule directe depuis la pastille (clic droit).
+        # La désactivation exige le mot de passe professeur.
+        if controller.protection_active() and not ask_teacher_password(
+            "Saisissez le mot de passe professeur pour désactiver la protection"
+        ):
+            return
+        new_state = controller.apply(active=not controller.protection_active())
+        refresh(new_state)
+
+    def on_reduce():
+        # Masque la GUI et affiche la pastille près de la fenêtre.
+        pastille.set_active(controller.protection_active())
+        pastille.move(window.x() + window.width() - 36, window.y() + 8)
+        pastille.show()
+        window.hide()
+
+    def on_pastille_show():
+        # Affiche à nouveau la GUI complète.
+        pastille.hide()
+        window.show()
+        window.raise_()
+
     toggle_btn.toggled.connect(on_toggle)
     word_check.stateChanged.connect(on_word)
     lo_check.stateChanged.connect(on_lo)
     password_btn.clicked.connect(on_password_btn)
+    reduce_btn.clicked.connect(on_reduce)
+    pastille.clicked_show.connect(on_pastille_show)
+    pastille.clicked_toggle.connect(pastille_toggle)
 
     # L'outil démarre TOUJOURS en non protégé (l'instituteur active la
     # protection explicitement quand il le souhaite). On force l'état à faux,
