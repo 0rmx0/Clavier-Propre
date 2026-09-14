@@ -29,7 +29,7 @@ def test_config_load_corrupt(tmp_path: Path, monkeypatch):
     (tmp_path / "config.json").write_text("{not json", encoding="utf-8")
 
     c = cfg.AppConfig.load()
-    assert c.protection_active is True
+    assert c.protection_active is False
 
 
 def test_keyboard_state_non_windows():
@@ -45,7 +45,7 @@ def test_controller_current_state_non_windows():
 
     ctrl = ProtectionController()
     state = ctrl.current_state()
-    assert state.active is True
+    assert state.active is False
     assert state.word_managed is True
     assert state.libreoffice_managed is True
 

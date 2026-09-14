@@ -24,7 +24,9 @@ def hash_password(password: str, salt: str) -> str:
 @dataclass
 class AppConfig:
     # ``True`` = fonction active (suggestions désactivées sur le système).
-    protection_active: bool = True
+    # Par défaut, l'outil démarre NON protégé : l'instituteur active
+    # explicitement la protection quand il le souhaite.
+    protection_active: bool = False
     # Valeurs DWORD d'origine du clavier sauvegardées à la désactivation.
     saved_keyboard_values: dict[str, int] = field(default_factory=dict)
     # Préférences de correction bureautique.
