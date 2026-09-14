@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 def run_gui() -> int:
     from PySide6.QtCore import Qt, QTimer
-    from PySide6.QtGui import QFont
+    from PySide6.QtGui import QFont, QIcon
     from PySide6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -30,6 +30,14 @@ def run_gui() -> int:
 
     app = QApplication(sys.argv)
     app.setApplicationName("Clavier-Propre")
+
+    # Icône de l'application.
+    from pathlib import Path
+    icon_path = Path(__file__).resolve().parent.parent / "clavier.ico"
+    if icon_path.exists():
+        app_icon = QIcon(str(icon_path))
+        app.setWindowIcon(app_icon)
+        app.setApplicationDisplayName("Clavier-Propre")
     try:
         app.setQuitOnLastWindowClosed(False)
     except Exception:
