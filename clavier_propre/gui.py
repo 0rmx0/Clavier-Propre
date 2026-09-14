@@ -17,8 +17,12 @@ def run_gui() -> int:
     from PySide6.QtWidgets import (
         QApplication,
         QCheckBox,
+        QDialog,
+        QDialogButtonBox,
         QHBoxLayout,
         QLabel,
+        QLineEdit,
+        QMessageBox,
         QPushButton,
         QVBoxLayout,
         QWidget,
@@ -41,7 +45,7 @@ def run_gui() -> int:
         | Qt.WindowType.Tool
     )
     window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-    window.setFixedSize(240, 150)
+    window.setFixedSize(260, 200)
 
     layout = QVBoxLayout(window)
     layout.setContentsMargins(12, 12, 12, 12)
@@ -111,6 +115,24 @@ def run_gui() -> int:
     options_row.addWidget(lo_check)
     layout.addLayout(options_row)
 
+    # Bouton de réglage du mot de passe professeur.
+    password_btn = QPushButton("Mot de passe professeur")
+    password_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    password_btn.setStyleSheet(
+        f"""
+        QPushButton {{
+            background-color: {BTN_BG};
+            color: #ffffff;
+            border: 1px solid #000000;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 10px;
+        }}
+        QPushButton:hover {{ background-color: {BTN_HOVER}; }}
+        """
+    )
+    layout.addWidget(password_btn)
+
     def refresh(state):
         if state.active:
             status_label.setText("Protection ACTIVE")
@@ -127,21 +149,140 @@ def run_gui() -> int:
             toggle_btn.setText("Activer la protection")
             toggle_btn.setChecked(True)
 
+    def _warn(message: str) -> None:
+        QMessageBox.warning(window, "Clavier-Propre", message)
+
+    def _info(message: str) -> None:
+        QMessageBox.information(window, "Clavier-Propre", message)
+
+    def ask_teacher_password(prompt: str = "Mot de passe professeur requis") -> bool:
+        """Affiche un dialogue de saisie et vérifie le mot de passe.
+        Retourne True si aucun mot de passe n'est défini ou si la saisie est
+        correcte."""
+        if not controller.config.has_teacher_password():
+            return True
+        dlg = QDialog(window)
+        dlg.setWindowTitle("Clavier-Propre")
+        dlg.setModal(True)
+        dlg.setStyleSheet(
+            f"background-color: #2b1d24; color: #ffffff;"
+        )
+        v = QVBoxLayout(dlg)
+        lbl = QLabel(prompt)
+        v.addWidget(lbl)
+        le = QLineEdit()
+        le.setEchoMode(QLineEdit.EchoMode.Password)
+        le.setStyleSheet("background-color: #1f1419; color: #ffffff; padding: 6px;")
+        v.addWidget(le)
+        bb = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        v.addWidget(bb)
+        bb.accepted.connect(dlg.accept)
+        bb.rejected.connect(dlg.reject)
+        le.returnPressed.connect(dlg.accept)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return False
+        return controller.config.check_teacher_password(le.text())
+
     def on_toggle(checked: bool):
         # ``checked`` vient du bouton « Désactiver » : True => on désactive la
         # protection, donc ``active = not checked``.
+        if checked and not ask_teacher_password(
+            "Saisissez le mot de passe professeur pour désactiver la protection"
+        ):
+            toggle_btn.setChecked(False)
+            return
         new_state = controller.apply(active=not checked)
         refresh(new_state)
 
     def on_word(state):
+        # Décocher Word nécessite le mot de passe professeur.
+        if not bool(state) and not ask_teacher_password(
+            "Saisissez le mot de passe professeur pour désactiver Word"
+        ):
+            word_check.setChecked(True)
+            return
         controller.set_word_managed(bool(state))
 
     def on_lo(state):
+        # Décocher LibreOffice nécessite le mot de passe professeur.
+        if not bool(state) and not ask_teacher_password(
+            "Saisissez le mot de passe professeur pour désactiver LibreOffice"
+        ):
+            lo_check.setChecked(True)
+            return
         controller.set_libreoffice_managed(bool(state))
+
+    def on_password_btn():
+        dlg = QDialog(window)
+        dlg.setWindowTitle("Mot de passe professeur")
+        dlg.setModal(True)
+        dlg.setStyleSheet(f"background-color: #2b1d24; color: #ffffff;")
+        v = QVBoxLayout(dlg)
+
+        info = QLabel(
+            "Définir un mot de passe professeur.\n"
+            "S'il est défini, il sera requis pour désactiver\n"
+            "la protection ou décocher Word/LibreOffice.\n"
+            "Laisser vide pour supprimer le mot de passe."
+        )
+        info.setWordWrap(True)
+        v.addWidget(info)
+
+        if controller.config.has_teacher_password():
+            cur_lbl = QLabel("Mot de passe actuel :")
+            v.addWidget(cur_lbl)
+            cur_le = QLineEdit()
+            cur_le.setEchoMode(QLineEdit.EchoMode.Password)
+            cur_le.setStyleSheet("background-color: #1f1419; color: #ffffff; padding: 6px;")
+            v.addWidget(cur_le)
+        else:
+            cur_le = None
+
+        new_lbl = QLabel("Nouveau mot de passe :")
+        v.addWidget(new_lbl)
+        new_le = QLineEdit()
+        new_le.setEchoMode(QLineEdit.EchoMode.Password)
+        new_le.setStyleSheet("background-color: #1f1419; color: #ffffff; padding: 6px;")
+        v.addWidget(new_le)
+
+        confirm_lbl = QLabel("Confirmer :")
+        v.addWidget(confirm_lbl)
+        confirm_le = QLineEdit()
+        confirm_le.setEchoMode(QLineEdit.EchoMode.Password)
+        confirm_le.setStyleSheet("background-color: #1f1419; color: #ffffff; padding: 6px;")
+        v.addWidget(confirm_le)
+
+        bb = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        v.addWidget(bb)
+        bb.accepted.connect(dlg.accept)
+        bb.rejected.connect(dlg.reject)
+
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        if cur_le is not None and not controller.config.check_teacher_password(
+            cur_le.text()
+        ):
+            _warn("Mot de passe actuel incorrect.")
+            return
+
+        new_pw = new_le.text()
+        if new_pw != confirm_le.text():
+            _warn("Les mots de passe ne correspondent pas.")
+            return
+
+        controller.config.set_teacher_password(new_pw)
+        controller.config.save()
+        _info("Mot de passe professeur mis à jour." if new_pw else "Mot de passe professeur supprimé.")
 
     toggle_btn.toggled.connect(on_toggle)
     word_check.stateChanged.connect(on_word)
     lo_check.stateChanged.connect(on_lo)
+    password_btn.clicked.connect(on_password_btn)
 
     # Application de l'état initial au démarrage.
     initial = controller.apply(active=controller.config.protection_active)
