@@ -62,13 +62,47 @@ Le service exécute le mode `--service` qui applique la protection et la
 réapplique toutes les 30 s si elle a été désactivée. Les journaux sont écrits
 dans `%LOCALAPPDATA%\Clavier-Propre\clavier-propre.log`.
 
-## Compilation en exécutable
+## Compilation en exécutable (PyInstaller)
+
+Le dépôt fournit `Clavier-Propre.spec` et `build.bat` pour générer un `.exe`
+autonome (mode fenêtré, sans console) avec PyInstaller.
 
 ```cmd
-pyinstaller --noconfirm --onefile --windowed --name Clavier-Propre ^
-  --hidden-import win32service ^
+:: Préparer l'environnement (une fois)
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+
+:: Build
+build.bat
+```
+
+Le résultat est `dist\Clavier-Propre.exe`.
+
+```cmd
+:: Lancer la GUI
+dist\Clavier-Propre.exe
+
+:: Lancer en mode service (arrière-plan)
+dist\Clavier-Propre.exe --service
+```
+
+Le `.spec` déclare les imports cachés nécessaires (pywin32 / COM,
+`win32serviceutil`, etc.) et exclut `tkinter`. `winreg` est un module built-in
+sous Windows, rien à ajouter.
+
+Le `.bat` active automatiquement le venv s'il est présent et nettoie les builds
+précédents. Pour un build en ligne de commande sans `.spec` :
+
+```cmd
+pyinstaller --noconfirm --clean --onefile --windowed --name Clavier-Propre ^
+  --hidden-import win32com ^
+  --hidden-import win32com.client ^
+  --hidden-import pythoncom ^
   --hidden-import win32serviceutil ^
+  --hidden-import win32service ^
   --hidden-import servicemanager ^
+  --hidden-import win32evtlogutil ^
   clavier_propre\__main__.py
 ```
 
