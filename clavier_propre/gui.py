@@ -19,6 +19,7 @@ def run_gui() -> int:
         QCheckBox,
         QHBoxLayout,
         QLabel,
+        QPushButton,
         QVBoxLayout,
         QWidget,
     )
@@ -59,16 +60,28 @@ def run_gui() -> int:
     detail_label.setWordWrap(True)
     layout.addWidget(detail_label)
 
-    # Commutateur ON/OFF pour la protection.
-    from clavier_propre.toggle_switch import ToggleSwitch
-
+    # Palette des boutons : fond nettement plus sombre que le fond de la fenêtre
+    # pour qu'ils restent bien lisibles, quel que soit l'état (rouge / vert).
     BTN_BG = "#1f1419"
-    toggle_btn = ToggleSwitch(label_on="ON", label_off="OFF")
-    toggle_row = QHBoxLayout()
-    toggle_row.addStretch()
-    toggle_row.addWidget(toggle_btn)
-    toggle_row.addStretch()
-    layout.addLayout(toggle_row)
+    BTN_HOVER = "#2d1f28"
+    toggle_btn = QPushButton("Désactiver la protection")
+    toggle_btn.setCheckable(True)
+    toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    toggle_btn.setStyleSheet(
+        f"""
+        QPushButton {{
+            background-color: {BTN_BG};
+            color: #ffffff;
+            border: 1px solid #000000;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-weight: 600;
+        }}
+        QPushButton:hover {{ background-color: {BTN_HOVER}; }}
+        QPushButton:pressed {{ background-color: #120a10; }}
+        """
+    )
+    layout.addWidget(toggle_btn)
 
     options_row = QHBoxLayout()
     word_check = QCheckBox("Word")
@@ -104,17 +117,20 @@ def run_gui() -> int:
             status_label.setStyleSheet("color: #ffffff;")
             detail_label.setText("Suggestions clavier désactivées")
             window.setStyleSheet("background-color: #c0392b;")
+            toggle_btn.setText("Désactiver la protection")
             toggle_btn.setChecked(False)
         else:
             status_label.setText("Protection inactive")
             status_label.setStyleSheet("color: #ffffff;")
             detail_label.setText("Suggestions clavier autorisées")
             window.setStyleSheet("background-color: #27ae60;")
+            toggle_btn.setText("Activer la protection")
             toggle_btn.setChecked(True)
 
     def on_toggle(checked: bool):
-        # ``checked`` vient du commutateur : ON (True) => on active la protection.
-        new_state = controller.apply(active=checked)
+        # ``checked`` vient du bouton « Désactiver » : True => on désactive la
+        # protection, donc ``active = not checked``.
+        new_state = controller.apply(active=not checked)
         refresh(new_state)
 
     def on_word(state):
