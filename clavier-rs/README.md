@@ -65,6 +65,30 @@ sans dépendances à l'exécution, le plus simple est de compiler sur Windows (V
 Pour la cross-compilation, installez MinGW-w64 et le backend Slint approprié.
 Le `Cargo.toml` déclare les dépendances Windows-spécifiques (`winreg`, `windows`) via `cfg(windows)`.
 
+## Compilation en .exe avec icône
+
+L'icône (`clavier.ico`) est embarquée dans l'exécutable via un fichier de
+ressources Windows (`clavier.rc`), compilé par la crate `embed-resource`.
+
+Sur Windows :
+```powershell
+cargo build --release
+# Résultat : target\release\clavier-propre.exe (icône intégrée)
+```
+
+En cross-compilation depuis Linux (MinGW) :
+```bash
+sudo apt install mingw-w64
+rustup target add x86_64-pc-windows-gnu
+cargo build --release --target x86_64-pc-windows-gnu
+# Résultat : target/x86_64-pc-windows-gnu/release/clavier-propre.exe
+```
+
+`embed-resource` détecte automatiquement le compilateur de ressources :
+- **MSVC** (Windows) : utilise `rc.exe` du Windows SDK.
+- **MinGW** (Windows ou cross-compile) : utilise `windres`.
+- **Cibles non-Windows** : no-op (la ressource n'est pas incluse).
+
 ## Notes
 
 - **LibreOffice via UNO** : le Python embarqué de LibreOffice (`program\python.exe`) est utilisé prioritairement. À défaut, démarrage d'une instance `soffice --headless --accept=socket,...` ; le bridge UNO depuis un Python externe n'est pas garanti.
