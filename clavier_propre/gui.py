@@ -53,7 +53,7 @@ def run_gui() -> int:
         | Qt.WindowType.Tool
     )
     window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-    window.setFixedSize(260, 200)
+    window.setFixedSize(320, 200)
 
     layout = QVBoxLayout(window)
     layout.setContentsMargins(12, 12, 12, 12)
@@ -98,8 +98,10 @@ def run_gui() -> int:
     options_row = QHBoxLayout()
     word_check = QCheckBox("Word")
     lo_check = QCheckBox("LibreOffice")
+    wc_check = QCheckBox("WordCraft")
     word_check.setChecked(controller.config.manage_word)
     lo_check.setChecked(controller.config.manage_libreoffice)
+    wc_check.setChecked(controller.config.manage_wordcraft)
     checkbox_qss = (
         f"""
         QCheckBox {{
@@ -119,8 +121,10 @@ def run_gui() -> int:
     )
     word_check.setStyleSheet(checkbox_qss)
     lo_check.setStyleSheet(checkbox_qss)
+    wc_check.setStyleSheet(checkbox_qss)
     options_row.addWidget(word_check)
     options_row.addWidget(lo_check)
+    options_row.addWidget(wc_check)
     layout.addLayout(options_row)
 
     # Bouton de réglage du mot de passe professeur.
@@ -234,6 +238,15 @@ def run_gui() -> int:
             return
         controller.set_libreoffice_managed(bool(state))
 
+    def on_wc(state):
+        # Décocher WordCraft nécessite le mot de passe professeur.
+        if not bool(state) and not ask_teacher_password(
+            "Saisissez le mot de passe professeur pour désactiver WordCraft"
+        ):
+            wc_check.setChecked(True)
+            return
+        controller.set_wordcraft_managed(bool(state))
+
     def on_password_btn():
         dlg = QDialog(window)
         dlg.setWindowTitle("Mot de passe professeur")
@@ -302,6 +315,7 @@ def run_gui() -> int:
     toggle_btn.toggled.connect(on_toggle)
     word_check.stateChanged.connect(on_word)
     lo_check.stateChanged.connect(on_lo)
+    wc_check.stateChanged.connect(on_wc)
     password_btn.clicked.connect(on_password_btn)
 
     # L'outil démarre TOUJOURS en non protégé (l'instituteur active la
@@ -317,7 +331,9 @@ def run_gui() -> int:
 
     def watchdog():
         st = controller.current_state()
-        if controller.config.protection_active and st.keyboard_enabled:
+        if controller.config.protection_active and (
+            st.keyboard_enabled or not controller.wordcraft_protected()
+        ):
             log.info("Réactivation détectée : re-protection.")
             controller.apply(active=True)
 

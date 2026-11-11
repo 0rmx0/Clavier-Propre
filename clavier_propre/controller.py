@@ -1,12 +1,12 @@
-"""Contrôleur central : orchestre la bascule entre les trois cibles
-(clavier physique, Microsoft Office, LibreOffice) et conserve l'état.
+"""Contrôleur central : orchestre la bascule entre les quatre cibles
+(clavier physique, Microsoft Office, LibreOffice, WordCraft) et conserve l'état.
 """
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
 
-from clavier_propre import keyboard, office_lo, office_ms
+from clavier_propre import keyboard, office_lo, office_ms, wordcraft
 from clavier_propre.config import AppConfig
 
 log = logging.getLogger(__name__)
@@ -19,6 +19,7 @@ class ProtectionState:
     keyboard_enabled: bool  # True = suggestions clavier actuellement actives
     word_managed: bool
     libreoffice_managed: bool
+    wordcraft_managed: bool
 
 
 class ProtectionController:
@@ -34,6 +35,7 @@ class ProtectionController:
             keyboard_enabled=kb.enabled,
             word_managed=self.config.manage_word,
             libreoffice_managed=self.config.manage_libreoffice,
+            wordcraft_managed=self.config.manage_wordcraft,
         )
 
     def apply(self, active: bool) -> ProtectionState:
@@ -59,6 +61,13 @@ class ProtectionController:
             except Exception as exc:  # pragma: no cover
                 log.warning("Pilotage LibreOffice échoué: %s", exc)
 
+        # 4) WordCraft.
+        if self.config.manage_wordcraft:
+            try:
+                wordcraft.apply_wordcraft_protection(active=active)
+            except Exception as exc:  # pragma: no cover
+                log.warning("Pilotage WordCraft échoué: %s", exc)
+
         return self.current_state()
 
     def set_word_managed(self, managed: bool) -> None:
@@ -78,3 +87,23 @@ class ProtectionController:
                 office_lo.apply_libreoffice_protection(active=managed)
             except Exception as exc:  # pragma: no cover
                 log.warning("Pilotage LibreOffice échoué: %s", exc)
+
+    def set_wordcraft_managed(self, managed: bool) -> None:
+        self.config.manage_wordcraft = managed
+        self.config.save()
+        if self.config.protection_active:
+            try:
+                wordcraft.apply_wordcraft_protection(active=managed)
+            except Exception as exc:  # pragma: no cover
+                log.warning("Pilotage WordCraft échoué: %s", exc)
+
+    def wordcraft_protected(self) -> bool:
+        """Vrai si la correction de WordCraft est actuellement désactivée dans
+        ``ui.json`` (utilisé par le watchdog)."""
+        if not self.config.manage_wordcraft:
+            return True
+        try:
+            return wordcraft.get_state().protected
+        except Exception as exc:  # pragma: no cover
+            log.warning("Lecture de l'état WordCraft échouée: %s", exc)
+            return True

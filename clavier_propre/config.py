@@ -32,11 +32,15 @@ class AppConfig:
     # Préférences de correction bureautique.
     manage_word: bool = True
     manage_libreoffice: bool = True
+    manage_wordcraft: bool = True
     # Dernier état connu de la correction dans Word/LO, pour restauration.
     saved_word_check_spelling: bool = True
     saved_word_check_grammar: bool = True
     saved_word_auto_correct: bool = True
     saved_lo_auto_spellcheck: bool = True
+    # Valeurs d'origine de ui.json (WordCraft) sauvegardées à la désactivation,
+    # pour restauration fidèle à la réactivation.
+    saved_wordcraft_ui: dict = field(default_factory=dict)
     # Mot de passe professeur (vide = aucun mot de passe requis).
     # On stocke le sel + le hash, jamais le mot de passe en clair.
     teacher_password_salt: str = ""

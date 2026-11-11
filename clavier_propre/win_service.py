@@ -63,7 +63,9 @@ if _HAS_PYWIN32:
 
             while not self._stop_event.wait(30):
                 st = keyboard.get_state()
-                if controller.config.protection_active and st.enabled:
+                if controller.config.protection_active and (
+                    st.enabled or not controller.wordcraft_protected()
+                ):
                     servicemanager.LogInfoMsg(
                         "Clavier-Propre : réactivation détectée, re-protection."
                     )

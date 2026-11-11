@@ -17,19 +17,25 @@ LOG_PATH = Path.home() / "AppData" / "Local" / "Clavier-Propre" / "clavier-propr
 APP_NAME = "Clavier-Propre"
 APP_VERSION = "1.0.0"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
+
+def _configure_logging(service: bool) -> None:
+    # Un seul basicConfig : appeler basicConfig deux fois est un no-op (le root
+    # a déjà des handlers), les logs --service n'auraient jamais atteint le fichier.
+    kwargs: dict = {
+        "level": logging.INFO,
+        "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    }
+    if service:
+        LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        kwargs["filename"] = str(LOG_PATH)
+    logging.basicConfig(**kwargs)
 
 
 def main() -> int:
-    if "--service" in sys.argv:
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s [%(levelname)s] %(message)s",
-            filename=str(LOG_PATH),
-        )
+    service = "--service" in sys.argv
+    _configure_logging(service)
+
+    if service:
         from clavier_propre.service import run_headless
 
         return run_headless()
