@@ -114,17 +114,24 @@ def set_suggestions(enabled: bool) -> KeyboardState:
         config.saved_keyboard_values = saved
         config.save()
 
+    # À la réactivation, on restaure les valeurs d'origine sauvegardées si
+    # disponibles (restauration fidèle) ; sinon on remet tout à activé.
+    if enabled and config.saved_keyboard_values:
+        values = {name: config.saved_keyboard_values.get(name, _ENABLE) for name in _TRACKED_VALUES}
+    else:
+        values = {name: target for name in _TRACKED_VALUES}
+
     key = _open_key(True)
     try:
         for name in _TRACKED_VALUES:
             try:
-                winreg.SetValueEx(key, name, 0, winreg.REG_DWORD, target)
+                winreg.SetValueEx(key, name, 0, winreg.REG_DWORD, values[name])
             except OSError as exc:  # pragma: no cover - cas défensif
                 log.warning("Impossible d'écrire %s: %s", name, exc)
         # Valeur dédiée aux builds récents de Windows 11.
         try:
             winreg.SetValueEx(
-                key, "InkPredictionEnabled", 0, winreg.REG_DWORD, target
+                key, "InkPredictionEnabled", 0, winreg.REG_DWORD, values["EnableHwkbTextPrediction"]
             )
         except OSError:
             pass
@@ -132,7 +139,6 @@ def set_suggestions(enabled: bool) -> KeyboardState:
         key.Close()
 
     if enabled:
-        # On restaure les valeurs d'origine sauvegardées si disponibles.
         config.saved_keyboard_values = {}
         config.save()
 

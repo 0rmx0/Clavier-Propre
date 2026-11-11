@@ -1,8 +1,8 @@
 # Clavier-Propre
 
 Outil Windows 11 (Python / PySide6) qui **désactive les suggestions de mots du
-clavier physique**, ainsi que la **correction automatique de Microsoft Office
-et de LibreOffice**, pendant les phases d'évaluation. Il fonctionne comme un
+clavier physique**, ainsi que la **correction automatique de Microsoft Office,
+de LibreOffice et de WordCraft**, pendant les phases d'évaluation. Il fonctionne comme un
 **service Windows** et affiche en permanence un **indicateur visuel au premier
 plan** pour l'instituteur, avec un **bouton de bascule** pour réactiver la
 fonctionnalité hors évaluation.
@@ -17,6 +17,10 @@ fonctionnalité hors évaluation.
   `AutoCorrect`.
 - **LibreOffice** : pilotage **UNO** via le nœud de configuration
   `org.openoffice.Office.Writer` (`IsAutoSpellCheck`).
+- **WordCraft** (storytold/wordcraft) : édition de `ui.json`
+  (`%APPDATA%\\WordCraft\\ui.json`) — `checkSpelling`, `markGrammar` et
+  `autocorrect.*` basculés à `false`, avec sauvegarde des valeurs d'origine
+  pour restauration fidèle.
 - **Indicateur visuel** : fenêtre PySide6 sans bordure, toujours au premier plan,
   déplaçable à la souris. Rouge = protection active, vert = inactive.
 - **Bouton de bascule** : l'élève/instituteur peut activer ou désactiver la
@@ -40,8 +44,8 @@ python -m clavier_propre
 ```
 
 La fenêtre apparaît au premier plan. Bouton central pour basculer la
-protection ; cases à cocher pour activer/désactiver la gestion de Word et
-LibreOffice.
+protection ; cases à cocher pour activer/désactiver la gestion de Word,
+LibreOffice et WordCraft.
 
 ## Service Windows
 
@@ -109,8 +113,8 @@ pyinstaller --noconfirm --clean --onefile --windowed --name Clavier-Propre ^
 ## Configuration
 
 Fichier JSON : `%LOCALAPPDATA%\Clavier-Propre\config.json`. Conserve l'état de
-la protection, les préférences Word/LibreOffice et les valeurs d'origine du
-registre pour restauration fidèle.
+la protection, les préférences Word/LibreOffice/WordCraft et les valeurs
+d'origine du registre et de `ui.json` (WordCraft) pour restauration fidèle.
 
 ## Limites
 
@@ -121,6 +125,12 @@ registre pour restauration fidèle.
   LibreOffice, ou via `PYTHONPATH` pointant vers le dossier `program`).
 - **Microsoft Office** : les options COM sont globales à l'application Word et
   persistent pour tous les documents.
+- **WordCraft** : le pilotage se fait en éditant `ui.json`. WordCraft lit ce
+  fichier au démarrage et le réécrit à sa fermeture : s'il est ouvert pendant
+  l'activation de la protection, le changement n'est pris en compte qu'à son
+  prochain lancement (le watchdog réapplique néanmoins le fichier en
+  permanence). `WORDCRAFT_PROFILE_DIR` est respecté si cette variable
+  d'environnement définit un profil déplacé.
 - Le registre ne prend effet qu'après rechargement de la session pour certaines
   applications ; un `WM_SETTINGCHANGE` est diffusé pour accélérer la prise en
   compte.

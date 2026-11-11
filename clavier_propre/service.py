@@ -24,7 +24,9 @@ def _loop(controller: ProtectionController) -> None:
     controller.apply(active=True)
     while not _STOP.wait(30):
         st = controller.current_state()
-        if controller.config.protection_active and st.keyboard_enabled:
+        if controller.config.protection_active and (
+            st.keyboard_enabled or not controller.wordcraft_protected()
+        ):
             log.info("Réactivation détectée : re-protection (mode service).")
             controller.apply(active=True)
 
