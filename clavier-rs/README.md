@@ -13,6 +13,25 @@ Mêmes fonctionnalités que la version Python, mais en un binaire autonome plus 
 - **Service** : mode `--service` (headless) installable comme service Windows via NSSM, avec watchdog de re-protection toutes les 30 s.
 - **Watchdog** GUI : réapplique la protection si elle a été contournée.
 
+## Maquette UI (FigCraft)
+
+L'interface est maquettée avec [FigCraft](ui/clavier-propre-ui.figcraft) :
+4 écrans (protection active / inactive + les 2 dialogues de mot de passe),
+style minimaliste conservé (fond plein rouge/vert) avec une hiérarchie
+clarifiée — pastille d'état, libellés explicites, section « Applications
+gérées », bouton principal contrasté et actions secondaires discrètes.
+
+Les rendus PNG (2x) sont dans `ui/export/` :
+
+- `ecran-protection-active.png`
+- `ecran-protection-inactive.png`
+- `dialogue-mot-de-passe.png`
+- `dialogue-reglage-mot-de-passe.png`
+
+`ui/app.slint` implémente cette maquette (mêmes positions, couleurs et
+composants : pastille, toggles, bouton principal, actions avec icônes
+vectorielles, modales avec voile 45 %).
+
 ## Compilation (cross-compile depuis Linux)
 
 ```bash
