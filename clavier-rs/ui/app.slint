@@ -1,21 +1,279 @@
-import { Button, CheckBox, LineEdit } from "std-widgets.slint";
-
-export global StatusColors {
-    out property <brush> active-color: #c0392b;
-    out property <brush> inactive-color: #27ae60;
-    out property <color> btn-bg: #1f1419;
-    out property <color> btn-hover: #2d1f28;
+// ---------------------------------------------------------------------------
+// Design tokens — maquette FigCraft : clavier-rs/ui/clavier-propre-ui.figcraft
+// ---------------------------------------------------------------------------
+export global Palette {
+    out property <color> active: #c0392b;        // protection active (rouge)
+    out property <color> inactive: #27ae60;      // protection inactive (vert)
+    out property <color> card: #2b1d24;          // carte des dialogues
+    out property <color> card-icon-bg: #3d2a35;  // pastille icône dans la carte
+    out property <color> input-bg: #1f1419;      // champs de saisie
+    out property <color> scrim: #0f172a;         // voile des modales (alpha 45%)
+    out property <color> text-dim: #cccccc;
+    out property <color> error: #ff6b6b;
+    out property <color> white: #ffffff;
 }
 
+// ---------------------------------------------------------------------------
+// Icônes vectorielles (traits Lucide, 24x24)
+// ---------------------------------------------------------------------------
+component Icon inherits Path {
+    in property <color> icon-color: white;
+    in property <length> icon-size: 24px;
+    width: icon-size;
+    height: icon-size;
+    viewbox-width: 24;
+    viewbox-height: 24;
+    fill: Colors.transparent;
+    stroke: icon-color;
+    stroke-width: 2px;
+    stroke-line-cap: round;
+    stroke-line-join: round;
+}
+
+component IconShield inherits Icon {
+    commands: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z";
+}
+
+component IconCheck inherits Icon {
+    commands: "M20 6 9 17l-5-5";
+}
+
+component IconLock inherits Icon {
+    commands: "M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z M7 11V7a5 5 0 0 1 10 0v4";
+}
+
+// ---------------------------------------------------------------------------
+// Pastille d'état en haut de la fenêtre (56x56, icône couleur = état)
+// ---------------------------------------------------------------------------
+component StatusBadge inherits Rectangle {
+    in property <bool> active: true;
+    in property <color> state-color: Palette.active;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: Palette.white;
+    if root.active : IconShield {
+        icon-color: root.state-color;
+        icon-size: 28px;
+        x: 14px;
+        y: 14px;
+        stroke-width: 2.5px;
+    }
+    if !root.active : IconCheck {
+        icon-color: root.state-color;
+        icon-size: 28px;
+        x: 14px;
+        y: 14px;
+        stroke-width: 2.5px;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Ligne "application gérée" : case blanche + coche + libellé
+// ---------------------------------------------------------------------------
+component AppToggle inherits Rectangle {
+    in-out property <bool> checked: true;
+    in property <string> label: "";
+    in property <color> accent: Palette.active;
+    callback toggled(bool);
+    width: 240px;
+    height: 28px;
+    background: transparent;
+    Rectangle {
+        x: 0;
+        y: 6px;
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        background: Palette.white;
+        if root.checked : IconCheck {
+            icon-color: root.accent;
+            icon-size: 12px;
+            x: 2px;
+            y: 2px;
+            stroke-width: 3px;
+        }
+    }
+    Text {
+        x: 24px;
+        y: 0;
+        height: 28px;
+        vertical-alignment: center;
+        text: root.label;
+        color: Palette.white;
+        font-size: 11px;
+    }
+    TouchArea {
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Bouton principal (fond blanc, texte couleur = état)
+// ---------------------------------------------------------------------------
+component PrimaryButton inherits Rectangle {
+    in property <string> label: "";
+    in property <color> accent: Palette.active;
+    callback activated();
+    width: 240px;
+    height: 40px;
+    border-radius: 12px;
+    background: Palette.white;
+    Text {
+        width: parent.width;
+        height: parent.height;
+        text: root.label;
+        color: root.accent;
+        font-size: 12px;
+        font-weight: 700;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    TouchArea {
+        clicked => {
+            root.activated();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Action secondaire (petite icône + libellé), ex. Mot de passe / Réduire
+// ---------------------------------------------------------------------------
+component LinkAction inherits Rectangle {
+    in property <string> label: "";
+    in property <string> icon-path: "";
+    in property <length> row-width: 100px;
+    callback activated();
+    width: row-width;
+    height: 24px;
+    background: transparent;
+    opacity: 0.9;
+    Icon {
+        icon-size: 16px;
+        icon-color: Palette.white;
+        x: 2px;
+        y: 4px;
+        commands: root.icon-path;
+    }
+    Text {
+        x: 22px;
+        y: 0;
+        height: 24px;
+        vertical-alignment: center;
+        text: root.label;
+        color: Palette.white;
+        font-size: 10px;
+    }
+    TouchArea {
+        clicked => {
+            root.activated();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Bouton de dialogue : primaire (blanc) ou secondaire (bordure blanche)
+// ---------------------------------------------------------------------------
+component DialogButton inherits Rectangle {
+    in property <string> label: "";
+    in property <bool> primary: true;
+    callback activated();
+    width: 104px;
+    height: 36px;
+    border-radius: 8px;
+    background: root.primary ? Palette.white : transparent;
+    border-width: root.primary ? 0px : 1px;
+    border-color: Palette.white;
+    opacity: root.primary ? 1 : 0.7;
+    Text {
+        width: parent.width;
+        height: parent.height;
+        text: root.label;
+        color: root.primary ? Palette.card : Palette.white;
+        font-size: 11px;
+        font-weight: root.primary ? 700 : 400;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    TouchArea {
+        clicked => {
+            root.activated();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Champ de saisie sombre des dialogues (TextInput + placeholder maison)
+// ---------------------------------------------------------------------------
+component PasswordField inherits Rectangle {
+    in-out property <string> text: "";
+    in property <string> placeholder-text: "";
+    in property <bool> has-error: false;
+    callback edited();
+    height: 36px;
+    background: Palette.input-bg;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: root.has-error ? Palette.error : Colors.transparent;
+    clip: true;
+    TextInput {
+        x: 12px;
+        y: 0;
+        width: parent.width - 24px;
+        height: parent.height;
+        text <=> root.text;
+        color: Palette.white;
+        font-size: 10px;
+        vertical-alignment: center;
+        input-type: password;
+        edited => {
+            root.edited();
+        }
+    }
+    if root.text.is-empty : Text {
+        x: 12px;
+        y: 0;
+        width: parent.width - 24px;
+        height: parent.height;
+        text: root.placeholder-text;
+        color: #8a7a82;
+        font-size: 10px;
+        vertical-alignment: center;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Carte modale (fond sombre, coins 16px, ombre portée)
+// ---------------------------------------------------------------------------
+component ModalCard inherits Rectangle {
+    width: 248px;
+    background: Palette.card;
+    border-radius: 16px;
+    drop-shadow-color: #00000066;
+    drop-shadow-blur: 24px;
+    drop-shadow-offset-y: 8px;
+    @children
+}
+
+// ---------------------------------------------------------------------------
+// Application
+// ---------------------------------------------------------------------------
 export component App inherits Window {
     title: "Clavier-Propre";
-    background: root.protection-active ? StatusColors.active-color : StatusColors.inactive-color;
+    background: root.state-color;
     preferred-width: 280px;
     preferred-height: 320px;
+    min-width: 280px;
+    max-width: 280px;
+    min-height: 320px;
+    max-height: 320px;
 
     in-out property <bool> protection-active: false;
     in-out property <string> status-text: "Protection inactive";
-    in-out property <string> detail-text: "Suggestions clavier autorisées";
+    in-out property <string> detail-text: "Suggestions du clavier autorisées";
     in-out property <bool> manage-word: true;
     in-out property <bool> manage-libreoffice: true;
     in-out property <bool> has-teacher-password: false;
@@ -28,6 +286,9 @@ export component App inherits Window {
     in-out property <bool> show-password-setup-dialog: false;
     in-out property <string> password-message: "";
 
+    // Couleur de l'état courant (rouge = active, vert = inactive).
+    property <color> state-color: root.protection-active ? Palette.active : Palette.inactive;
+
     callback toggle-protection();
     callback word-toggled(bool);
     callback libreoffice-toggled(bool);
@@ -38,164 +299,258 @@ export component App inherits Window {
     callback password-setup-cancel();
     callback open-password-setup();
 
-    VerticalLayout {
-        alignment: center;
-        spacing: 8px;
-        padding: 14px;
+    // --- Écran principal (280x320, positionnement fidèle à la maquette) ---
 
-        Text {
-            text: root.status-text;
-            font-weight: 800;
-            font-size: 14px;
-            color: white;
-            horizontal-alignment: center;
-        }
+    StatusBadge {
+        x: 112px;
+        y: 20px;
+        active: root.protection-active;
+        state-color: root.state-color;
+    }
 
-        Text {
-            text: root.detail-text;
-            font-size: 11px;
-            color: white;
-            horizontal-alignment: center;
-            wrap: word-wrap;
-        }
+    Text {
+        x: 20px;
+        y: 82px;
+        width: 240px;
+        height: 20px;
+        text: root.status-text;
+        color: Palette.white;
+        font-size: 16px;
+        font-weight: 800;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
 
-        Button {
-            text: root.protection-active ? "Désactiver la protection" : "Activer la protection";
-            clicked => { root.toggle-protection(); }
-        }
+    Text {
+        x: 20px;
+        y: 106px;
+        width: 240px;
+        height: 14px;
+        text: root.detail-text;
+        color: Palette.white;
+        opacity: 0.85;
+        font-size: 11px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
 
-        HorizontalLayout {
-            spacing: 8px;
-            alignment: center;
+    Text {
+        x: 20px;
+        y: 126px;
+        width: 240px;
+        height: 12px;
+        text: "APPLICATIONS GÉRÉES";
+        color: Palette.white;
+        opacity: 0.6;
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 1.5px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
 
-            CheckBox {
-                text: "Word";
-                checked: root.manage-word;
-                toggled => { root.word-toggled(self.checked); }
-            }
-
-            CheckBox {
-                text: "LibreOffice";
-                checked: root.manage-libreoffice;
-                toggled => { root.libreoffice-toggled(self.checked); }
-            }
-        }
-
-        Button {
-            text: "Mot de passe professeur";
-            clicked => { root.open-password-setup(); }
-        }
-
-        Button {
-            text: "Réduire";
-            clicked => { root.reduce-requested(); }
+    AppToggle {
+        x: 20px;
+        y: 143px;
+        label: "Microsoft Word";
+        checked: root.manage-word;
+        accent: root.state-color;
+        toggled => {
+            root.word-toggled(self.checked);
         }
     }
 
-    // Dialogue de saisie du mot de passe (superposé).
+    AppToggle {
+        x: 20px;
+        y: 177px;
+        label: "LibreOffice";
+        checked: root.manage-libreoffice;
+        accent: root.state-color;
+        toggled => {
+            root.libreoffice-toggled(self.checked);
+        }
+    }
+
+    PrimaryButton {
+        x: 20px;
+        y: 211px;
+        label: root.protection-active ? "Désactiver la protection" : "Activer la protection";
+        accent: root.state-color;
+        activated => {
+            root.toggle-protection();
+        }
+    }
+
+    LinkAction {
+        x: 46px;
+        y: 257px;
+        label: "Mot de passe";
+        row-width: 100px;
+        icon-path: "M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z M7 11V7a5 5 0 0 1 10 0v4";
+        activated => {
+            root.open-password-setup();
+        }
+    }
+
+    LinkAction {
+        x: 170px;
+        y: 257px;
+        label: "Réduire";
+        row-width: 64px;
+        icon-path: "m6 9 6 6 6-6";
+        activated => {
+            root.reduce-requested();
+        }
+    }
+
+    // --- Dialogue de saisie du mot de passe (voile + carte centrée) ---
+
     if root.show-password-dialog : Rectangle {
-        background: #2b1d24;
-        border-radius: 8px;
-        x: 10px; y: 10px;
-        width: root.width - 20px;
-        height: root.height - 20px;
+        x: 0;
+        y: 0;
+        width: 100%;
+        height: 100%;
+        background: Palette.scrim;
+        opacity: 0.45;
+        TouchArea {}
+    }
 
+    if root.show-password-dialog : ModalCard {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
         VerticalLayout {
-            alignment: center;
-            spacing: 10px;
             padding: 16px;
-
+            spacing: 8px;
+            HorizontalLayout {
+                alignment: center;
+                Rectangle {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 20px;
+                    background: Palette.card-icon-bg;
+                    IconLock {
+                        icon-size: 20px;
+                        icon-color: Palette.white;
+                        x: 10px;
+                        y: 10px;
+                    }
+                }
+            }
+            Text {
+                text: "Mot de passe requis";
+                color: Palette.white;
+                font-size: 13px;
+                font-weight: 700;
+                horizontal-alignment: center;
+            }
             Text {
                 text: root.password-prompt;
-                color: white;
-                font-size: 11px;
+                color: Palette.text-dim;
+                font-size: 10px;
                 wrap: word-wrap;
                 horizontal-alignment: center;
             }
-
-            LineEdit {
-                placeholder-text: "Mot de passe";
-                text: root.password-input;
-                edited => { root.password-input = self.text; }
+            if !root.password-message.is-empty : Text {
+                text: root.password-message;
+                color: Palette.error;
+                font-size: 9px;
+                horizontal-alignment: center;
             }
-
+            PasswordField {
+                placeholder-text: "Mot de passe";
+                has-error: !root.password-message.is-empty;
+                text <=> root.password-input;
+            }
             HorizontalLayout {
-                spacing: 8px;
                 alignment: center;
-                Button {
-                    text: "OK";
-                    clicked => { root.password-dialog-ok(); }
+                spacing: 8px;
+                DialogButton {
+                    label: "OK";
+                    primary: true;
+                    activated => {
+                        root.password-dialog-ok();
+                    }
                 }
-                Button {
-                    text: "Annuler";
-                    clicked => { root.password-dialog-cancel(); }
+                DialogButton {
+                    label: "Annuler";
+                    primary: false;
+                    activated => {
+                        root.password-dialog-cancel();
+                    }
                 }
             }
         }
     }
 
-    // Dialogue de réglage du mot de passe.
+    // --- Dialogue de réglage du mot de passe professeur ---
+
     if root.show-password-setup-dialog : Rectangle {
-        background: #2b1d24;
-        border-radius: 8px;
-        x: 10px; y: 10px;
-        width: root.width - 20px;
-        height: root.height - 20px;
+        x: 0;
+        y: 0;
+        width: 100%;
+        height: 100%;
+        background: Palette.scrim;
+        opacity: 0.45;
+        TouchArea {}
+    }
 
+    if root.show-password-setup-dialog : ModalCard {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
         VerticalLayout {
-            alignment: center;
-            spacing: 8px;
             padding: 16px;
-
+            spacing: 8px;
             Text {
                 text: "Mot de passe professeur";
-                color: white;
+                color: Palette.white;
+                font-size: 13px;
                 font-weight: 700;
-                font-size: 12px;
                 horizontal-alignment: center;
             }
             Text {
-                text: "Laisser vide pour supprimer.";
-                color: #cccccc;
+                text: "Laissez vide pour supprimer le mot de passe.";
+                color: Palette.text-dim;
                 font-size: 9px;
                 horizontal-alignment: center;
             }
-
-            if root.has-teacher-password : LineEdit {
+            if root.has-teacher-password : PasswordField {
+                height: 32px;
                 placeholder-text: "Mot de passe actuel";
-                text: root.password-cur-input;
-                edited => { root.password-cur-input = self.text; }
+                text <=> root.password-cur-input;
             }
-
-            LineEdit {
+            PasswordField {
+                height: 32px;
                 placeholder-text: "Nouveau mot de passe";
-                text: root.password-new-input;
-                edited => { root.password-new-input = self.text; }
+                text <=> root.password-new-input;
             }
-
-            LineEdit {
-                placeholder-text: "Confirmer";
-                text: root.password-confirm-input;
-                edited => { root.password-confirm-input = self.text; }
+            PasswordField {
+                height: 32px;
+                placeholder-text: "Confirmer le mot de passe";
+                has-error: !root.password-message.is-empty;
+                text <=> root.password-confirm-input;
             }
-
             if !root.password-message.is-empty : Text {
                 text: root.password-message;
-                color: #ff6b6b;
-                font-size: 10px;
+                color: Palette.error;
+                font-size: 9px;
                 horizontal-alignment: center;
             }
-
             HorizontalLayout {
-                spacing: 8px;
                 alignment: center;
-                Button {
-                    text: "OK";
-                    clicked => { root.password-setup-ok(); }
+                spacing: 8px;
+                DialogButton {
+                    label: "OK";
+                    primary: true;
+                    activated => {
+                        root.password-setup-ok();
+                    }
                 }
-                Button {
-                    text: "Annuler";
-                    clicked => { root.password-setup-cancel(); }
+                DialogButton {
+                    label: "Annuler";
+                    primary: false;
+                    activated => {
+                        root.password-setup-cancel();
+                    }
                 }
             }
         }

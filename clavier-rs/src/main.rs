@@ -53,9 +53,7 @@ fn run_gui() {
         {
             // Ouvrir le dialogue de mot de passe.
             *pa_clone.lock().unwrap() = Some(PasswordAction::DisableProtection);
-            app.set_password_prompt(
-                "Saisissez le mot de passe professeur pour désactiver la protection".into(),
-            );
+            app.set_password_prompt("Entrez le mot de passe professeur.".into());
             app.set_password_input("".into());
             app.set_show_password_dialog(true);
             return;
@@ -80,9 +78,7 @@ fn run_gui() {
             && controller_word.config_has_teacher_password()
         {
             *pw_word_clone.lock().unwrap() = Some(PasswordAction::DisableWord);
-            app.set_password_prompt(
-                "Saisissez le mot de passe professeur pour désactiver Word".into(),
-            );
+            app.set_password_prompt("Entrez le mot de passe professeur.".into());
             app.set_password_input("".into());
             app.set_show_password_dialog(true);
             return;
@@ -99,9 +95,7 @@ fn run_gui() {
             && controller_lo.config_has_teacher_password()
         {
             *pw_lo_clone.lock().unwrap() = Some(PasswordAction::DisableLibreoffice);
-            app.set_password_prompt(
-                "Saisissez le mot de passe professeur pour désactiver LibreOffice".into(),
-            );
+            app.set_password_prompt("Entrez le mot de passe professeur.".into());
             app.set_password_input("".into());
             app.set_show_password_dialog(true);
             return;
@@ -238,10 +232,10 @@ fn show_pastille(app: &App) {
 fn refresh_ui(app: &App, active: bool) {
     app.set_protection_active(active);
     if active {
-        app.set_status_text("Protection ACTIVE".into());
-        app.set_detail_text("Suggestions clavier désactivées".into());
+        app.set_status_text("Protection active".into());
+        app.set_detail_text("Suggestions du clavier bloquées".into());
     } else {
         app.set_status_text("Protection inactive".into());
-        app.set_detail_text("Suggestions clavier autorisées".into());
+        app.set_detail_text("Suggestions du clavier autorisées".into());
     }
 }
